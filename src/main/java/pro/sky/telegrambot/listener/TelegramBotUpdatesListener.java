@@ -38,6 +38,7 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
 
     private TelegramBot telegramBot;
 
+
 //    injections
 
     public TelegramBotUpdatesListener(TelegramBot telegramBot,
@@ -58,13 +59,17 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     @Override
     public int process(List<Update> updates) {
         updates.forEach(update -> {
-            logger.info("Processing update: {}", update);
 //          если сообщение старт, то отправляем приветственное сообщение
             if (update.message().text().contains("/start")) {
                 SendMessage message = new SendMessage(update.message().chat().id(), "hello");
                 telegramBot.execute(message);
 
+                
+
             } else {
+
+                
+
 //          иначе обрабатываем полученное сообщение установленного типа
 
 //                вызов функции matcherRegEx и вычление даты с удаление пробелов по краям
@@ -83,6 +88,7 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
 //              сохранение в базе данных
                 notificationTaskRepository.save(notificationTaskObject);
 
+                
             }
         });
 
@@ -124,30 +130,31 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     @Scheduled(cron = "0 0/1 * * * *")
     public void run() {
 
-        Collection<NotificationTask> notificationTaskCollection = notificationTaskRepository.findAll();
-
-        boolean equalsTime = notificationTaskCollection.stream()
-               .anyMatch(e -> e.getDate().toString()
-                       .contentEquals(LocalDateTime.now()
-                               .truncatedTo(ChronoUnit.MINUTES)
-                               .toString()));
-
-        NotificationTask notification = notificationTaskObject;
+       NotificationTask notification = notificationTaskObject;
 
         String resultDate = "в " + notification.getDate().getHour() + ":" +
                 notification.getDate().getMinute() + " часов " +
                 notification.getDate().getDayOfMonth() + " " +
                 notification.getDate().getMonth().getDisplayName(TextStyle.FULL, new Locale("ru")) + " " +
                 notification.getDate().getYear() + " года " +
-                notificationTaskObject.getNotifications();
+                notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
+            .truncatedTo(ChronoUnit.MINUTES));
+                
 
-        logger.info(resultDate);
+        logger.info(notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
+                               .truncatedTo(ChronoUnit.MINUTES)));
 
-        if(equalsTime) {
-            SendMessage message = new SendMessage(notificationTaskObject.getId(), resultDate);
-            SendResponse response = telegramBot.execute(message);
-            logger.info(response.isOk() ? "true" : "false");
-        }
+            String notificationFromDataBase = notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
+            .truncatedTo(ChronoUnit.MINUTES));
+                   
+            if(!notificationFromDataBase.equals(null)) {
+                SendMessage message = new SendMessage(notificationTaskObject.getId(), 
+                resultDate);
+                 telegramBot.execute(message);      
+            }
+
+          
+
 
 
     }
