@@ -63,13 +63,7 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
             if (update.message().text().contains("/start")) {
                 SendMessage message = new SendMessage(update.message().chat().id(), "hello");
                 telegramBot.execute(message);
-
-                
-
             } else {
-
-                
-
 //          иначе обрабатываем полученное сообщение установленного типа
 
 //                вызов функции matcherRegEx и вычление даты с удаление пробелов по краям
@@ -87,16 +81,13 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                 );
 //              сохранение в базе данных
                 notificationTaskRepository.save(notificationTaskObject);
-
-                
-            }
+               }
         });
 
         return UpdatesListener.CONFIRMED_UPDATES_ALL;
     }
-
 //    вспомогательная функция для обработки сообщения пользователя
-    private String matcherRegEx(String regex, Update update) {
+    private static String matcherRegEx(String regex, Update update) {
 
         String input = update.message().text();
         Pattern pattern = Pattern.compile(regex);
@@ -152,17 +143,8 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                 resultDate);
                  telegramBot.execute(message);      
             }
-
-          
-
-
-
     }
-
-
-
-
-    }
+}
 
 
 
