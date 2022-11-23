@@ -1,13 +1,8 @@
 --liquibase formatted sql
-
-
--- changeSet brakovchen:1
+-- changeSet brakovchen:6
 CREATE TABLE notification_task(
-    id INTEGER,
+    id bigint,
+    id_chat bigint,
     notifications varchar,
     date timestamp
 );
-
-
-
-

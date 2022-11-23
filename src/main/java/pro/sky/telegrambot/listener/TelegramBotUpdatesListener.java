@@ -1,19 +1,14 @@
 package pro.sky.telegrambot.listener;
-
 import com.pengrad.telegrambot.TelegramBot;
 import com.pengrad.telegrambot.UpdatesListener;
 import com.pengrad.telegrambot.model.Update;
 import com.pengrad.telegrambot.request.SendMessage;
-import com.pengrad.telegrambot.response.SendResponse;
-import org.apache.commons.lang3.RegExUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import pro.sky.telegrambot.Model.NotificationTask;
 import pro.sky.telegrambot.Repository.NotificationTaskRepository;
-
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -22,25 +17,19 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 @Service
 public class TelegramBotUpdatesListener implements UpdatesListener {
-
     private Logger logger = LoggerFactory.getLogger(TelegramBotUpdatesListener.class);
-
 //    repository
     private final NotificationTaskRepository notificationTaskRepository;
 //   model
     private NotificationTask notificationTask;
 //  object our class
     private NotificationTask notificationTaskObject;
-
     private TelegramBot telegramBot;
-
-
+    private List<String> notificationFromDataBase;
+    private String stringSplit;
 //    injections
-
     public TelegramBotUpdatesListener(TelegramBot telegramBot,
                                       NotificationTaskRepository notificationTaskRepository,
                                       NotificationTask notificationTask) {
@@ -48,14 +37,10 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
         this.notificationTaskRepository = notificationTaskRepository;
         this.notificationTask = notificationTask;
     }
-
-
     @PostConstruct
     public void init() {
         telegramBot.setUpdatesListener(this);
     }
-
-
     @Override
     public int process(List<Update> updates) {
         updates.forEach(update -> {
@@ -65,86 +50,64 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                 telegramBot.execute(message);
             } else {
 //          иначе обрабатываем полученное сообщение установленного типа
-
 //                вызов функции matcherRegEx и вычление даты с удаление пробелов по краям
                 String date = matcherRegEx("[0-9\\.\\s:]+", update).trim();
 //                преобразуем дату
                 LocalDateTime dateResult = LocalDateTime.parse(date, DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
 //              вызов той же функции matcherRegEx, но уже для вычленения текста
                 String notification = matcherRegEx("[А-Я|а-я]+", update).trim();
-
 //              добавляем всё в экземпляр нашей сущности
-                 notificationTaskObject = new NotificationTask(
-                        update.message().chat().id(),
-                         notification,
-                        dateResult
-                );
 //              сохранение в базе данных
+                notificationTaskObject = new NotificationTask(
+                    notificationTask.getId(),
+                    update.message().chat().id(),
+                    notification,
+                    dateResult
+               );
                 notificationTaskRepository.save(notificationTaskObject);
-               }
+           }
         });
-
         return UpdatesListener.CONFIRMED_UPDATES_ALL;
     }
 //    вспомогательная функция для обработки сообщения пользователя
     private static String matcherRegEx(String regex, Update update) {
-
         String input = update.message().text();
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(input);
-
+        final Pattern pattern1 = Pattern.compile(regex);
+        Matcher matcher = pattern1.matcher(input);
         StringBuilder stringBuilder = new StringBuilder();
-
 //        если значение даты
         if(regex.contains("[0-9\\.\\s:]+")) {
             input = update.message().text();
-            pattern = Pattern.compile(regex);
-            matcher = pattern.matcher(input);
-
+           final Pattern pattern2 = Pattern.compile(regex);
+            matcher = pattern2.matcher(input);
             while (matcher.find()) {
                 String matchedValue = matcher.group();
                 return matchedValue;
             }
-
         }
-
         while (matcher.find()) {
             String matchedValue = matcher.group();
             stringBuilder.append(" " + matchedValue.trim());
         }
         String notificationResult = stringBuilder.toString();
-
         return notificationResult;
-
     }
-
     @Scheduled(cron = "0 0/1 * * * *")
     public void run() {
-
-       NotificationTask notification = notificationTaskObject;
-
-        String resultDate = "в " + notification.getDate().getHour() + ":" +
-                notification.getDate().getMinute() + " часов " +
-                notification.getDate().getDayOfMonth() + " " +
-                notification.getDate().getMonth().getDisplayName(TextStyle.FULL, new Locale("ru")) + " " +
-                notification.getDate().getYear() + " года " +
-                notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
+        LocalDateTime time = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
+        String resultDate = "в " + time.getHour() + ":" +
+                                   time.getMinute() + " " +
+                                   time.getDayOfMonth() + " " +
+                                   time.getMonth().getDisplayName(TextStyle.FULL, new Locale("ru")) + " " +
+                                   time.getYear() + " года " + "\n" +
+                  notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
             .truncatedTo(ChronoUnit.MINUTES));
-                
-
-        logger.info(notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
-                               .truncatedTo(ChronoUnit.MINUTES)));
-
-            String notificationFromDataBase = notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
-            .truncatedTo(ChronoUnit.MINUTES));
-                   
-            if(!notificationFromDataBase.equals(null)) {
-                SendMessage message = new SendMessage(notificationTaskObject.getId(), 
-                resultDate);
-                 telegramBot.execute(message);      
-            }
+        String str = notificationTaskRepository.findByFirstnameContaining(LocalDateTime.now()
+      .truncatedTo(ChronoUnit.MINUTES));
+        if(!str.equals(null)) {
+        SendMessage message = new SendMessage(notificationTaskObject.getIdChat(), 
+        resultDate);
+         telegramBot.execute(message);   
+       }      
     }
 }
-
-
-
