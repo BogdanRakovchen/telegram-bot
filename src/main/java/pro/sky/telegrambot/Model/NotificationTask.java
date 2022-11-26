@@ -1,5 +1,4 @@
 package pro.sky.telegrambot.Model;
-import org.springframework.stereotype.Component;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -8,7 +7,6 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 @Entity
 @Table(name = "notification_task")
-@Component
 public class NotificationTask {
     @Id
     @GeneratedValue
@@ -16,8 +14,8 @@ public class NotificationTask {
     private Long idChat;
     private String notifications;
     private LocalDateTime date;
-    public NotificationTask(Long id, Long idChat, String notifications, LocalDateTime date) {
-        this.id = id;
+    public NotificationTask(Long idChat, String notifications, LocalDateTime date) {
+        
         this.idChat = idChat;
         this.notifications = notifications;
         this.date = date;

@@ -22,20 +22,17 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     private Logger logger = LoggerFactory.getLogger(TelegramBotUpdatesListener.class);
 //    repository
     private final NotificationTaskRepository notificationTaskRepository;
-//   model
-    private NotificationTask notificationTask;
 //  object our class
     private NotificationTask notificationTaskObject;
     private TelegramBot telegramBot;
-    private List<String> notificationFromDataBase;
-    private String stringSplit;
+    private static final Pattern pattern1 = Pattern.compile("[А-Я|а-я]+");
+    private static final Pattern pattern2 = Pattern.compile("[0-9\\.\\s:]+");
 //    injections
     public TelegramBotUpdatesListener(TelegramBot telegramBot,
-                                      NotificationTaskRepository notificationTaskRepository,
-                                      NotificationTask notificationTask) {
+                                      NotificationTaskRepository notificationTaskRepository
+                                      ) {
         this.telegramBot = telegramBot;
         this.notificationTaskRepository = notificationTaskRepository;
-        this.notificationTask = notificationTask;
     }
     @PostConstruct
     public void init() {
@@ -58,8 +55,8 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
                 String notification = matcherRegEx("[А-Я|а-я]+", update).trim();
 //              добавляем всё в экземпляр нашей сущности
 //              сохранение в базе данных
+                logger.info(dateResult + " " + notification);
                 notificationTaskObject = new NotificationTask(
-                    notificationTask.getId(),
                     update.message().chat().id(),
                     notification,
                     dateResult
@@ -72,13 +69,11 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
 //    вспомогательная функция для обработки сообщения пользователя
     private static String matcherRegEx(String regex, Update update) {
         String input = update.message().text();
-        final Pattern pattern1 = Pattern.compile(regex);
         Matcher matcher = pattern1.matcher(input);
         StringBuilder stringBuilder = new StringBuilder();
 //        если значение даты
         if(regex.contains("[0-9\\.\\s:]+")) {
             input = update.message().text();
-           final Pattern pattern2 = Pattern.compile(regex);
             matcher = pattern2.matcher(input);
             while (matcher.find()) {
                 String matchedValue = matcher.group();
@@ -94,6 +89,7 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     }
     @Scheduled(cron = "0 0/1 * * * *")
     public void run() {
+        
         LocalDateTime time = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES);
         String resultDate = "в " + time.getHour() + ":" +
                                    time.getMinute() + " " +
@@ -110,4 +106,5 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
          telegramBot.execute(message);   
        }      
     }
+    
 }
